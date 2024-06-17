@@ -23,14 +23,6 @@ struct github : git {
     }
 };
 
-std::string replace_all(std::string s, const std::string &pattern, const std::string &repl) {
-    size_t pos;
-    while ((pos = s.find(pattern)) != -1) {
-        s = s.substr(0, pos) + repl + s.substr(pos + pattern.size());
-    }
-    return s;
-}
-
 struct file_regex_op {
     enum {
         add,
@@ -50,7 +42,6 @@ void unpack(const path &arch, const path &dir) {
     log_info("extracting {}", arch);
     c.run();
 }
-
 
 template <typename Source, typename Version>
 struct package {
