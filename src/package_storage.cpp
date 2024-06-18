@@ -142,15 +142,30 @@ struct github_repository : git_remote {
         //return x{url() + std::format("/archive/refs/tags/{}.tar.gz", t.value)};
     }
 };
+auto operator""_github(const char *s, size_t len) {
+    return github_repository{std::string_view{s,s+len}};
+}
 
+template <typename PackageStorage>
 struct software {
+    PackageStorage &storage;
     // source
+
+    software(PackageStorage &storage, auto id) : storage{storage} {
+    }
+    auto add(auto &&) {
+    }
+    auto add_repository(auto &&) {
+    }
+
+    auto operator+=(auto &&) {
+    }
 };
 
-struct repository {
+struct package_storage {
     path root;
 
-    repository(const path &root) : root{root} {
+    package_storage(const path &root) : root{root} {
         fs::create_directories(root / "tmp");
     }
     void add(auto &&remote) {
@@ -158,6 +173,10 @@ struct repository {
 
         int a = 5;
         a++;
+    }
+
+    auto add_software(auto && ... args) {
+        return software{*this, args...};
     }
 };
 
@@ -186,6 +205,9 @@ struct version_list {
     void add(const std::initializer_list<int> &v) {
         versions.insert(v);
         last_ver = v;
+    }
+    auto operator+=(const std::initializer_list<int> &v) {
+        add(v);
     }
     bool check_next(auto &&repo, auto &&tag, int recursion = 0, std::source_location sl = std::source_location::current()) {
         bool result{};
@@ -229,20 +251,29 @@ struct version_list {
 int main1(int argc, char *argv[]) {
     if (argc == 1) {
         std::cerr << std::format("usage: {} storage_dir\n", argv[0]);
+        return 1;
     }
-    repository repo{argv[1]};
+    package_storage ps{argv[1]};
 
     tag vv{"v{v}"};
     tag vmmpo{"v{M}.{m}{po}"};
 
-    //repo.add_software();
+    //auto ??? = repo.add_prefix("prefix or some id");
+    //auto org = repo.add_organization("prefix or some id");
 
     {
-        github_repository ghr{"madler/zlib"};
+        auto zlib = ps.add_software("org.zlib");
+        zlib += "madler/zlib"_github;
+        zlib.add("madler/zlib"_github);
+        zlib.add_repository("madler/zlib"_github);
+
+        auto gh = "madler/zlib"_github;
+
         version_list vl;
-        vl.add({1,2,3});
-        vl.add({1,3,1});
-        vl.check_next(ghr, vmmpo);
+        vl += {1,2,3};
+        vl += {1,3,1};
+        vl.check_next(gh, vmmpo);
+
         for (auto &&v : vl)
         {
             //madler_zlib.download(vmmpo(v));
